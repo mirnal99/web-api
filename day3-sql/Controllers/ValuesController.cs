@@ -1,13 +1,16 @@
-﻿using Microsoft.Ajax.Utilities;
+using Microsoft.Ajax.Utilities;
 using System;
+using System.Data;
+using System.Data.SqlClient;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Net.Http;
+using System.Net.Http; 
 using System.Runtime.Remoting.Messaging;
 using System.Web.Http;
 
-namespace WebApplication1.Controllers
+
+namespace day4.Controllers
 {
     public class Person
     {
@@ -18,7 +21,7 @@ namespace WebApplication1.Controllers
         public string firstName { get; set; } = "";
         public string lastName { get; set; } = "";
     }
-    
+
     public class MShip
     {
         public static List<MShip> memberships = new List<MShip>();
@@ -29,20 +32,22 @@ namespace WebApplication1.Controllers
         public int cijena { get; set; } = 0;
 
     }
-    
-        public class ValuesController : ApiController
-        {
-            // string connection = "Data Source=DESKTOP-KOQMAL6\\SQLEXPRESS;Initial Catalog = day3; Integrated Security = True";
-        SqlConnection connection = new SqlConnection("Data Source=DESKTOP-KOQMAL6\\SQLEXPRESS;Initial Catalog = day3; Integrated Security = True");
-        
+
+    public class ValuesController : ApiController
+    {
+        // string connection = "Data Source=DESKTOP-KOQMAL6\\SQLEXPRESS;Initial Catalog = day3; Integrated Security = True";
+        SqlConnection connection = new SqlConnection("Data Source=DESKTOP-KOQMAL6\\SQLEXPRESS;Initial Catalog=day4;Integrated Security=True");
+
+
         [HttpGet]
-            [Route("api/values")]
-            // GET api/values
-            public HttpResponseMessage Get()
+        [Route("api/values")]
+        // GET api/values
+        public HttpResponseMessage Get()
+        {
+            using (connection)
             {
-                using (connection)
-                {
-                SqlCommand command = new SqlCommand("SELECT OIB, first_name, last_name FROM Member WHERE OIB = 121;", connection);
+                //SqlCommand command = new SqlCommand("SELECT OIB, FirstName, LastName FROM Member WHERE OIB = 121;", connection);
+                SqlCommand command = new SqlCommand("SELECT * FROM Member;", connection);
                 connection.Open();
 
                 SqlDataReader reader = command.ExecuteReader();
@@ -51,12 +56,16 @@ namespace WebApplication1.Controllers
                 {
                     while (reader.Read())
                     {
-                        
-                        Person.friends.Add(new Person { id = reader.GetInt32(0),
-                                firstName = reader.GetString(1), lastName = reader.GetString(2) });
+
+                        Person.friends.Add(new Person
+                        {
+                            id = reader.GetInt32(0),
+                            firstName = reader.GetString(1),
+                            lastName = reader.GetString(2)
+                        });
 
 
-                        
+
                     }
                     connection.Close();
                     return Request.CreateResponse(HttpStatusCode.OK, Person.friends);
@@ -69,25 +78,38 @@ namespace WebApplication1.Controllers
 
 
             }
-            }
+        }
 
         [HttpGet]
-        [Route("api/values/{id}")]
+        [Route("api/values/{value}")]
         // GET api/values/5
-        public HttpResponseMessage Get(int member_OIB)
+        public HttpResponseMessage Get(int id)
+        {
+            using (connection)
             {
-                using (connection)
-                {
-                SqlCommand command = new SqlCommand("SELECT * FROM Membership WHERE MemberOIB = @member_OIB;", connection);
-          
+                SqlCommand command = new SqlCommand("SELECT cijena FROM Membership WHERE id = @Id " , connection);
+                //SqlCommand command = new SqlCommand("SELECT cijena FROM Membership WHERE Id = 2;", connection);
+
                 connection.Open();
+
+                SqlParameter parameter = new SqlParameter("@Id", System.Data.SqlDbType.Int);
+                command.Parameters.Add(parameter).Value = id;
 
                 SqlDataReader reader = command.ExecuteReader();
 
                 if (reader.HasRows)
                 {
-                    MShip.memberships.Add(new MShip { id = reader.GetInt32(0),
-                                OIB = reader.GetInt32(1), cijena = reader.GetInt32(2) });
+                    while (reader.Read())
+                    {
+
+                        MShip.memberships.Add(new MShip
+                        {
+                            //id = reader.GetInt32(0),
+                            //OIB = reader.GetInt32(1),
+                            cijena = reader.GetInt32(0)
+                        }
+                         );
+                    }
 
                     connection.Close();
 
@@ -103,91 +125,115 @@ namespace WebApplication1.Controllers
             }
 
 
-            } 
+        }
 
 
-      /*      [HttpGet]
-            [Route("api/values")]
-            // GET api/values
-            public HttpResponseMessage Get()
-            {
-                if (Person.friends == null)
-                {
-                    return Request.CreateResponse(HttpStatusCode.NotFound, "Name not found");
-                } // 404 - can not find the requested resource
 
-                return Request.CreateResponse(HttpStatusCode.OK, Person.friends);
-            }
-
-        [HttpGet]
+        [HttpPost]
         [Route("api/values/{id}")]
-        // GET api/values/5
-        public HttpResponseMessage Get(int id)
+        // POST api/values      //Update price for given membership id
+        public HttpResponseMessage Post(int Id, [FromBody] int cijena) 
+        {
+            using (connection)
             {
-                Person friend = Person.friends.Where(x => x.id == id).FirstOrDefault();
-                if (friend == null)
+                SqlCommand command_change_price = new SqlCommand("SELECT cijena FROM Membership WHERE Id = @Id;", connection);
+
+                connection.Open();
+
+                command_change_price.Parameters.Add("@Id", System.Data.SqlDbType.Int).Value = Id;
+                SqlDataReader reader_cijena = command_change_price.ExecuteReader();
+
+                if (reader_cijena.HasRows)
                 {
-                    return Request.CreateResponse(HttpStatusCode.NotFound, "Name not found");
-                } // 404 - can not find the requested resource
+                    SqlDataAdapter adapter = new SqlDataAdapter("SELECT Id, cijena FROM Membership;", connection);
+                    adapter.UpdateCommand = new SqlCommand("UPDATE Membership SET cijena = @cijena WHERE Id = @ Id;", connection);
 
-                return Request.CreateResponse(HttpStatusCode.OK, friend);
-            } // 200 - request has succeeded.
+                    adapter.UpdateCommand.Parameters.Add("@cijena", System.Data.SqlDbType.Int).Value = cijena;
 
-            [HttpPost]
-            [Route("api/values/{id}")]
-            // POST api/values
-            public HttpResponseMessage Post(int id)
+                    //not done...
+
+                    connection.Close();
+                    return Request.CreateResponse(HttpStatusCode.OK, "Price successfully changed.");
+
+                }
+                else
+                {
+                    return Request.CreateErrorResponse(HttpStatusCode.NotFound, "No membership with that Id.");
+                }
+            }
+        }
+
+        [HttpPut]
+        [Route("api/values/{oib}/{value1}/{value2}")]
+
+        public HttpResponseMessage Put(int OIB, string first_name, string last_name) //Insert 
+        {
+            SqlCommand command_insert = new SqlCommand("INSERT INTO Member VALUES(@OIB, @FirstName, @LastName);", connection);
+
+            connection.Open();
+
+            command_insert.Parameters.Add("@OIB", System.Data.SqlDbType.Int).Value = OIB;
+            command_insert.Parameters.Add("@FirstName", System.Data.SqlDbType.VarChar, 50).Value = first_name;
+            command_insert.Parameters.Add("@LastName", System.Data.SqlDbType.VarChar, 50).Value = last_name;
+
+            //provjeri jel postoji vec student s tim oibom:
+            SqlCommand command_check1 = new SqlCommand("SELECT OIB from Member WHERE OIB = @OIB", connection);
+
+            SqlDataReader reader = command_check1.ExecuteReader();
+
+            if (reader.HasRows)
             {
-            Person test = Person.friends.Where(x => x.id == id).FirstOrDefault();
-
-            if (test != null)
-            {
-                return Request.CreateResponse(HttpStatusCode.OK, test);
+                connection.Close();
+                return Request.CreateErrorResponse(HttpStatusCode.NotFound, "Member with taht OIB already exists.");
             }
             else
             {
-                return Request.CreateResponse(HttpStatusCode.NotFound, "Person does not exist.");
+                SqlDataAdapter adapter = new SqlDataAdapter();
+                adapter.InsertCommand = command_insert;
+                adapter.InsertCommand.ExecuteNonQuery(); //used to execute the sql statements like update, insert, delete
+                
+                connection.Close();
+                return Request.CreateResponse(HttpStatusCode.OK, "New member added.");
             }
-        } */
-            
-            [HttpPut]
-            [Route("api/values/{id}/{value1}/{value2}")]
-   
-            public HttpResponseMessage Put(int id, string value1, string value2)
-            {
-            Person test = Person.friends.Where(x => x.id == id).FirstOrDefault();
-            
-            if(test != null)
-            {
-                return Request.CreateResponse(HttpStatusCode.NotFound, "Id already exists.");
-                //return Request.CreateResponse(HttpStatusCode.OK, test);
-            }
-            else
-            {
-                Person.friends.Add(new Person { firstName = value1, lastName = value2, id = id });
-                return Request.CreateResponse(HttpStatusCode.OK, "Ok, add person.");
-            }
-            
-            }
+        }
 
 
         [HttpDelete]
         [Route("api/values/delete/{id}")]
-        public HttpResponseMessage Delete(int id)
+        public HttpResponseMessage Delete(int OIB)
+        {
+            using (connection)
             {
-            Person test2 = Person.friends.Where(x => x.id == id).FirstOrDefault();
+                connection.Open();
 
-            if (test2 != null)
-            {
-                Person.friends.Remove(id);
-                return Request.CreateResponse(HttpStatusCode.OK, "Ok, remove.");
-            }
-            else
-            {
-                return Request.CreateResponse(HttpStatusCode.NotFound, "No such id.");
+                SqlCommand command = new SqlCommand("SELECT FirstName FROM Member WHERE OIB = @OIB;", connection);
+
+                command.Parameters.Add("@OIB", System.Data.SqlDbType.Int).Value = OIB;
+
+                SqlDataReader reader = command.ExecuteReader();
+
+                if (reader.HasRows)
+                {
+                    SqlDataAdapter adapter = new SqlDataAdapter();
+
+                    adapter.DeleteCommand = new SqlCommand("DELETE FROM Member WHERE OIB = @OIB;", connection);
+                    adapter.DeleteCommand.UpdatedRowSource = System.Data.UpdateRowSource.None;
+                    adapter.DeleteCommand.ExecuteNonQuery();
+
+                    connection.Close();
+                    return Request.CreateResponse(HttpStatusCode.OK, "Member deleted.");
+
+
+                }
+                else
+                {
+                    connection.Close();
+                    return Request.CreateErrorResponse(HttpStatusCode.NotFound, "There is no member with that OIB.");
+                }
+
             }
 
-        }
         }
     }
+}
 
