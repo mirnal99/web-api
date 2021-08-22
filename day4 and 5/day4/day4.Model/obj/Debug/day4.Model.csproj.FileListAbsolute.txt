@@ -1,0 +1,6 @@
+C:\day4\day4\day4.Model\bin\Debug\day4.Model.dll
+C:\day4\day4\day4.Model\bin\Debug\day4.Model.pdb
+C:\day4\day4\day4.Model\obj\Debug\day4.Model.csprojAssemblyReference.cache
+C:\day4\day4\day4.Model\obj\Debug\day4.Model.csproj.CoreCompileInputs.cache
+C:\day4\day4\day4.Model\obj\Debug\day4.Model.dll
+C:\day4\day4\day4.Model\obj\Debug\day4.Model.pdb

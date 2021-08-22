@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "xxQ9nIFJDkBotlDC6gZIVxLY/3fD2gswtTqECOIzgsXaT51ZuzE0zEA4z6z2wsbUSpvj6oTO1DGxXwFaeeCGkg==",
+  "success": true,
+  "projectFilePath": "C:\\day4\\day4\\ClassLibraryDay4\\day4.Model.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Mirna\\.nuget\\packages\\microsoft.netcore.platforms\\1.1.0\\microsoft.netcore.platforms.1.1.0.nupkg.sha512",
+    "C:\\Users\\Mirna\\.nuget\\packages\\netstandard.library\\2.0.3\\netstandard.library.2.0.3.nupkg.sha512"
+  ],
+  "logs": []
+}
